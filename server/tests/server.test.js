@@ -107,3 +107,32 @@ describe('GET /todos/:id', () => {
         .end(done);
     });
 });
+
+describe('DELETE /todos/:id', () => {
+    it('should delete and return a todo', (done) => {
+        request(app)
+        .delete(`/todos/${todos[0]._id.valueOf()}`)
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.todo.text).toBe(todos[0].text);
+        })
+        .end(done);
+    });
+
+    it('should return 404 if todo not found', (done) => {
+        request(app)
+        .delete(`/todos/${new ObjectID().valueOf()}`)
+        .expect(404)
+        .expect((res) => {
+            expect(res.body).toNotBe();
+        })
+        .end(done);
+    });
+
+    it('should return 404 for non-object id\'s', (done) => {
+        request(app)
+        .delete('/todos/123')
+        .expect(404)
+        .end(done);
+    });
+})
