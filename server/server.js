@@ -41,73 +41,89 @@ app.get('/todos', (req, res) => {
 });
 
 app.get('/todos/:id', (req, res) => {
-    const id = req.params.id;
+  const id = req.params.id;
 
-    if (!ObjectId.isValid(id)) {
-        return res.status(404).send();
-    }
+  if (!ObjectId.isValid(id)) {
+    return res.status(404).send();
+  }
 
-    Todo.findById(id)
-    .then(todo => {
-        if (todo) {
-            res.send({ todo });
-        }
-        else {
-            res.status(404).send();
-        }
-    })
-    .catch(err => {
-        res.status(400).send();
-    });
+  Todo.findById(id)
+  .then(todo => {
+      if (todo) {
+        res.send({ todo });
+      }
+      else {
+        res.status(404).send();
+      }
+  })
+  .catch(err => {
+    res.status(400).send();
+  });
 });
 
 app.delete('/todos/:id', (req, res) => {
-    const id = req.params.id;
+  const id = req.params.id;
 
-    if (!ObjectId.isValid(id)) {
-        return res.status(404).send();
+  if (!ObjectId.isValid(id)) {
+    return res.status(404).send();
+  }
+
+  Todo.findByIdAndRemove(id)
+  .then(todo => {
+    if (!todo) {
+      return res.status(404).send();
     }
 
-    Todo.findByIdAndRemove(id)
-    .then(todo => {
-        if (!todo) {
-            return res.status(404).send();
-        }
-
-        res.send({ todo });
-    })
-    .catch(err => {
-        res.status(400).send();
-    });
+    res.send({ todo });
+  })
+  .catch(err => {
+    res.status(400).send();
+  });
 });
 
 app.patch('/todos/:id', (req, res) => {
-    const id = req.params.id;
-    const body = _.pick(req.body, ['text', 'completed']);
+  const id = req.params.id;
+  const body = _.pick(req.body, ['text', 'completed']);
 
-    if (!ObjectId.isValid(id)) {
-        return res.status(404).send();
+  if (!ObjectId.isValid(id)) {
+    return res.status(404).send();
+  }
+
+  if (_.isBoolean(body.completed) && body.completed) {
+    body.completedAt = new Date().getTime();
+  }
+  else {
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  Todo.findByIdAndUpdate(id, { $set: body }, { new: true })
+  .then(todo => {
+    if (!todo) {
+      return res.status(404).send();
     }
 
-    if (_.isBoolean(body.completed) && body.completed) {
-        body.completedAt = new Date().getTime();
-    }
-    else {
-        body.completed = false;
-        body.completedAt = null;
-    }
+    res.send({ todo });
+  })
+  .catch(err => {
+    res.status(400).send();
+  });
+});
 
-    Todo.findByIdAndUpdate(id, { $set: body }, { new: true })
-    .then(todo => {
-        if (!todo) {
-            return res.status(404).send();
-        }
+app.post('/users', (req, res) => {
+  const body = _.pick(req.body, ['email', 'password']);
+  const user = new User(body);
 
-        res.send({ todo });
-    })
-    .catch(err => {
-        res.status(400).send();
-    });
+  user.save()
+  .then(() => {
+    return user.generateAuthToken();
+  })
+  .then(token => {
+    res.header('x-auth', token).send(user);
+  })
+  .catch(err => {
+      res.status(400).send(err);
+  });
 });
 
 
